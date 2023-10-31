@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Write to file functionality using Any type</title>
+</head>
+
+<body>
+<h1>
+    Write to file functionality using Any type
+</h1>
+<p>
+    Let's start with a problem. Suppose we want a trait with a write operation that takes an object and write it to a file
+    somewhere.
+</p>
+<p>
+    The object can be of any type:
+</p>
+
+<pre>
+    Int, String, Person(age: Int, name: String)
+</pre>
+
+<p> How should we define this trait? </p>
+
+<p> One easy way of doing that is to define the trait with a write method that takes a parameter of type Any </p>
+
+<pre>
+    trait WriteStuff {
+        def write(obj: Any): Unit
+    }
+</pre>
+
+<p>
+    However, this is not the most elegant solution.
+</p>
+
+
+</body>
+</html>
