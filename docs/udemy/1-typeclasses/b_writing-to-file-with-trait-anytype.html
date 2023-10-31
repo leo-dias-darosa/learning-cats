@@ -24,7 +24,7 @@
 
 <p> How should we define this trait? </p>
 
-<p> One easy way of doing that is to define the trait with a write method that takes a parameter of type Any </p>
+<p> One easy way of doing that is to define the trait with a write method that takes a parameter of type Any: </p>
 
 <pre>
     trait WriteStuff {
@@ -33,9 +33,78 @@
 </pre>
 
 <p>
-    However, this is not the most elegant solution.
+    However, this is not the most elegant solution. Let's write an implementation for this trait. We define an object
+    WriteFile that extends WriteStuff.
 </p>
 
+<pre>
+    object WriteFile extends WriteStuff {
+        override def write(obj: Any): Unit = ???
+    }
+</pre>
 
+<p>
+    The implementation is composed of two parts:
+</p>
+<ol>
+    <li>The first is a handler that take the obj and process it according to its type, transforming the obj in an
+    Array[Bytes];</li>
+    <li>The second takes the Array[Bytes] and write/flush to the output.</li>
+</ol>
+
+<p>
+    So we get the following code:
+</p>
+<pre>
+    object WriteFile extends WriteStuff {
+        override def write(obj: Any): Unit = {
+            val bytes: Array[Byte] = ???
+
+            Using(new FileOutputStream("testingWriteStuffWithAny")) { os =>
+                os.write(bytes)
+                os.flush()
+            }
+        }
+    }
+</pre>
+
+<p>
+    Now we have to provide an implementation for the val bytes. This is actually the part that matters. Since we have
+    a variable of type Any, we need to know what we are dealing with. We can use pattern matching for that.
+</p>
+
+<p>
+    Consider the following code, that handles Int, String, and throw an exception if the obj is of other type:
+</p>
+
+<pre>
+    object WriteFile extends WriteStuff {
+      override def write(obj: Any): Unit = {
+        val bytes: Array[Byte] = obj match {
+          case i: Int =>
+            val byteBuffer = ByteBuffer.allocate(4)
+            byteBuffer.putInt(i)
+            byteBuffer.array()
+
+          case s: String => s.getBytes
+
+          case _ => throw new Exception("unhandled")
+        }
+
+        Using(new FileOutputStream("testingWriteStuffWithAny")) { os =>
+          os.write(bytes)
+          os.flush()
+        }
+      }
+    }
+</pre>
+
+<p>
+    Let's test it simply calling WriteFile.write() with an String
+</p>
+
+<pre>
+    WriteFile.write("Hello Any obj")
+</pre>
 </body>
 </html>
