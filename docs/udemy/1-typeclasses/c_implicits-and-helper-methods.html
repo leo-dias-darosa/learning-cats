@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>2. Implicits and helper methods</title>
+</head>
+<body>
+<h1> 2. Implicits and helper methods </h1>
+
+<p> Now that we know how to use the typeclass pattern. What else can we do to improve our code? </p>
+
+<h2> a. Implicits </h2>
+
+<p> We can use implicits to provide the instances of the typeclass. Instead of providing the parameters enc in the
+WriteStuff object, we can implicitly pass the corresponding ByteEncoder class with the implicit keyword,  </p>
+<pre>
+trait ByteEncoder[A] {
+  def encode(a: A): Array[Byte]
+}
+
+trait WriteStuff {
+  def write[A](obj: A)(implicit enc: ByteEncoder[A]): Unit
+}
+</pre>
+
+<p> or defining A as of type ByteEncoder, </p>
+<pre>
+trait ByteEncoder[A] {
+  def encode(a: A): Array[Byte]
+}
+
+trait WriteStuff {
+  def write[A: ByteEncoder](obj: A) : Unit
+}
+</pre>
+</body>
+</html>

@@ -8,7 +8,7 @@
 
 <body>
 <h1>
-    Write to file functionality
+    1. Write to file functionality
 </h1>
 <p>
     Let's start with a problem. Suppose we want a trait with a write operation that takes an object and write it to a file
@@ -25,7 +25,7 @@ Int, String, Person(age: Int, name: String)
 <p> How should we define this trait? </p>
 
 <h2>
-    1. WriteStuff trait with type Any
+    a. WriteStuff trait with type Any
 </h2>
 <p> One easy way of doing that is to define the trait with a write method that takes a parameter of type Any: </p>
 
@@ -35,7 +35,7 @@ trait WriteStuff {
 }
 </pre>
 
-<h3> a. Implementing this trait</h3>
+<h3> i. Implementing this trait</h3>
 <p>
     Let's write an implementation for this trait. We define an object WriteFile that extends WriteStuff.
 </p>
@@ -111,7 +111,7 @@ object WriteFile extends WriteStuff {
 </pre>
 
 <h3>
-    b. What are the pros and cons of writing the WriteStuff trait with the Any obj approach?
+    ii. What are the pros and cons of writing the WriteStuff trait with the Any obj approach?
 </h3>
 <p> The pros: </p>
 <ol>
@@ -130,7 +130,7 @@ object WriteFile extends WriteStuff {
 
 <p> How to improve?</p>
 
-<h2> 2. WriteStuff trait with inheritance</h2>
+<h2> b. WriteStuff trait with inheritance</h2>
 <p>
     It is possible to write a second solution with inheritance. This way, we delegate the responsibility of transforming
     the obj to Array[Byte] to another method.
@@ -146,7 +146,7 @@ trait EncodableObj {
 }
 </pre>
 
-<h3> a. Extending EncodableObj</h3>
+<h3> i. Extending EncodableObj</h3>
 <p> Let's define a custom class that extends EncodableObj. We are not really worried about the functionality.
     Just take two strings and combine them in an Array[Byte].
 </p>
@@ -156,7 +156,7 @@ case class fullName(firstName: String, lastName: String) extends EncodableObj {
 }
 </pre>
 
-<h3>b. WriteFile object extending WriteStuff</h3>
+<h3>ii. WriteFile object extending WriteStuff</h3>
 <p> Now let's create the same WriteFile object that extends WriteStuff, and implements the write method.</p>
 <pre>
 object WriteFile extends WriteStuff {
@@ -182,7 +182,7 @@ object WriteFile extends WriteStuff {
 WriteFile.write(fullName("leo", "dias"))
 </pre>
 
-<h3> c. What are the pros and cons of writing the WriteStuff trait with the inheritance approach? </h3>
+<h3> iii. What are the pros and cons of writing the WriteStuff trait with the inheritance approach? </h3>
 <p> The pros:</p>
 <ol>
     <li>Each method has a unique responsibility;</li>
@@ -203,7 +203,7 @@ WriteFile.write(fullName("leo", "dias"))
 
 <p> Yet again, how to improve?</p>
 
-<h2>3. WriteStuff trait with Typeclass</h2>
+<h2>c. WriteStuff trait with Typeclass</h2>
 
 <p>The most elegant solution to this trait is writing it with typeclasses. Let's take a look in the following
     code:
@@ -221,12 +221,12 @@ trait WriteStuff {
 }
 </pre>
 
-<p> In this case, the ByteEncoder trait is parametrized ([A]), and the encode method receives an argument of type A. By
+<p> In this case, the ByteEncoder trait is parametrized ([A]), and the encode method receives an argument of type i.By
     defining that our argument obj also as type A in the write method of WriteStuff trait, and enc as a ByteEncoder also
     of type A, we can call directly enc.encode(obj) to get an Array[Byte].
 </p>
 <p> This mean that now we don't extend classes with ByteEncoder, but we write instances for implementation. </p>
-<h3> a. Implementation of WriteFile trait with typeclasses </h3>
+<h3> i. Implementation of WriteFile trait with typeclasses </h3>
 <p> To make it clearer, let's take a look at the WriteFile object below:</p>
 <pre>
 object WriteObject extends WriteStuff {
@@ -247,7 +247,7 @@ object WriteObject extends WriteStuff {
     WriteObject is very generic and does not have any implementation yet.
 </p>
 
-<h3> b. Implementing an Int object </h3>
+<h3> ii. Implementing an Int object </h3>
 <p> Remember that in the inheritance example one of the major drawbacks was not being able to implement a WriteFile
     for an Int? Let's start by implementing the WriteFile with typeclasses for Ints.
 </p>
@@ -268,7 +268,7 @@ WriteObject.write[Int](20, IntByteEncoder)
 </pre>
 <p> This works perfectly! </p>
 
-<h3> c. Writing other types </h3>
+<h3> iii. Writing other types </h3>
 <p> If we need to write any other type with WriteObject, we can do something similar. For String types, for example:</p>
 <pre>
 object StringByteEncoder extends ByteEncoder[String] {
@@ -278,7 +278,7 @@ object StringByteEncoder extends ByteEncoder[String] {
 WriteObject.write("leo dias", StringByteEncoder)
 </pre>
 
-<h3> d. Advantages of typeclass solution </h3>
+<h3> iv. Advantages of typeclass solution </h3>
 <p> By writing the trait this way we have several advantages:</p>
 <ol>
     <li> ByteEncoder can be instanced by any type;</li>
