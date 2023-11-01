@@ -19,7 +19,7 @@ object WriteFile extends WriteStuff {
       case _ => throw new Exception("unhandled")
     }
 
-    Using(new FileOutputStream("C:/Users/Leonardo/Desktop/Learning/learning-cats/testingWriteAnyObject")) { os =>
+    Using(new FileOutputStream("C:/Users/Leonardo/Desktop/Learning/learning-cats/testingWriteFileAnyType")) { os =>
       os.write(bytes)
       os.flush()
     }

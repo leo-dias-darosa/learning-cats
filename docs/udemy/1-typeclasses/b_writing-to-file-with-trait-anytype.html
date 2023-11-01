@@ -3,12 +3,12 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Write to file functionality using Any type</title>
+    <title>Write to file functionality</title>
 </head>
 
 <body>
 <h1>
-    Write to file functionality using Any type
+    Write to file functionality
 </h1>
 <p>
     Let's start with a problem. Suppose we want a trait with a write operation that takes an object and write it to a file
@@ -19,28 +19,31 @@
 </p>
 
 <pre>
-    Int, String, Person(age: Int, name: String)
+Int, String, Person(age: Int, name: String)
 </pre>
 
 <p> How should we define this trait? </p>
 
+<h2>
+    1. WriteStuff trait with type Any
+</h2>
 <p> One easy way of doing that is to define the trait with a write method that takes a parameter of type Any: </p>
 
 <pre>
-    trait WriteStuff {
-        def write(obj: Any): Unit
-    }
+trait WriteStuff {
+    def write(obj: Any): Unit
+}
 </pre>
 
+<h3> a. Implementing this trait</h3>
 <p>
-    However, this is not the most elegant solution. Let's write an implementation for this trait. We define an object
-    WriteFile that extends WriteStuff.
+    Let's write an implementation for this trait. We define an object WriteFile that extends WriteStuff.
 </p>
 
 <pre>
-    object WriteFile extends WriteStuff {
-        override def write(obj: Any): Unit = ???
-    }
+object WriteFile extends WriteStuff {
+    override def write(obj: Any): Unit = ???
+}
 </pre>
 
 <p>
@@ -48,24 +51,25 @@
 </p>
 <ol>
     <li>The first is a handler that take the obj and process it according to its type, transforming the obj in an
-    Array[Bytes];</li>
-    <li>The second takes the Array[Bytes] and write/flush to the output.</li>
+        Array[Byte];
+    </li>
+    <li>The second takes the Array[Byte] and write/flush to the output.</li>
 </ol>
 
 <p>
     So we get the following code:
 </p>
 <pre>
-    object WriteFile extends WriteStuff {
-        override def write(obj: Any): Unit = {
-            val bytes: Array[Byte] = ???
+object WriteFile extends WriteStuff {
+    override def write(obj: Any): Unit = {
+        val bytes: Array[Byte] = ???
 
-            Using(new FileOutputStream("testingWriteStuffWithAny")) { os =>
-                os.write(bytes)
-                os.flush()
-            }
+        Using(new FileOutputStream("testingWriteStuffWithAny")) { os =>
+            os.write(bytes)
+            os.flush()
         }
     }
+}
 </pre>
 
 <p>
@@ -74,37 +78,216 @@
 </p>
 
 <p>
-    Consider the following code, that handles Int, String, and throw an exception if the obj is of other type:
+    Consider the following code, that handles Int, String, and throw an exception if obj is of other type:
 </p>
-
 <pre>
-    object WriteFile extends WriteStuff {
-      override def write(obj: Any): Unit = {
-        val bytes: Array[Byte] = obj match {
-          case i: Int =>
-            val byteBuffer = ByteBuffer.allocate(4)
-            byteBuffer.putInt(i)
-            byteBuffer.array()
+object WriteFile extends WriteStuff {
+  override def write(obj: Any): Unit = {
+    val bytes: Array[Byte] = obj match {
+      case i: Int =>
+        val byteBuffer = ByteBuffer.allocate(4)
+        byteBuffer.putInt(i)
+        byteBuffer.array()
 
-          case s: String => s.getBytes
+      case s: String => s.getBytes
 
-          case _ => throw new Exception("unhandled")
-        }
-
-        Using(new FileOutputStream("testingWriteStuffWithAny")) { os =>
-          os.write(bytes)
-          os.flush()
-        }
-      }
+      case _ => throw new Exception("unhandled")
     }
+
+    Using(new FileOutputStream("learning-cats/testingWriteFileWithAnyType")) { os =>
+      os.write(bytes)
+      os.flush()
+    }
+  }
+}
 </pre>
 
 <p>
-    Let's test it simply calling WriteFile.write() with an String
+    To test it, we can simply call WriteFile.write() with an String:
 </p>
 
 <pre>
     WriteFile.write("Hello Any obj")
 </pre>
+
+<h3>
+    b. What are the pros and cons of writing the WriteStuff trait with the Any obj approach?
+</h3>
+<p> The pros: </p>
+<ol>
+    <li>It is very simple.</li>
+</ol>
+
+<p> The (main) cons:</p>
+<ol>
+    <li>If the type is not handled, an exception is thrown during execution;</li>
+    <li>The method has two responsibilities:</li>
+    <ul>
+        <li>It converts the object to Array[Byte];</li>
+        <li>It writes the obj.</li>
+    </ul>
+</ol>
+
+<p> How to improve?</p>
+
+<h2> 2. WriteStuff trait with inheritance</h2>
+<p>
+    It is possible to write a second solution with inheritance. This way, we delegate the responsibility of transforming
+    the obj to Array[Byte] to another method.
+</p>
+<p> This is possible by creating a trait specifically to encoding obj, and another to write obj. </p>
+<pre>
+trait WriteStuff {
+  def write(obj: EncodableObj): Unit
+}
+
+trait EncodableObj {
+  def encode(): Array[Byte]
+}
+</pre>
+
+<h3> a. Extending EncodableObj</h3>
+<p> Let's define a custom class that extends EncodableObj. We are not really worried about the functionality.
+    Just take two strings and combine them in an Array[Byte].
+</p>
+<pre>
+case class fullName(firstName: String, lastName: String) extends EncodableObj {
+    override def encode(): Array[Byte] = firstName.getBytes ++ " ".getBytes ++ lastName.getBytes
+}
+</pre>
+
+<h3>b. WriteFile object extending WriteStuff</h3>
+<p> Now let's create the same WriteFile object that extends WriteStuff, and implements the write method.</p>
+<pre>
+object WriteFile extends WriteStuff {
+  override def write(obj: EncodableObj): Unit = {
+    val bytes: Array[Byte] = obj.encode()
+
+    Using(
+      new FileOutputStream("learning-cats/testingWriteFileInheritance")) {
+      os =>
+      os.write(bytes)
+      os.flush()
+    }
+  }
+}
+</pre>
+
+<p> See how it is not necessary to implement the transformation from obj to Array[Byte] in the WriteFile object. We
+    can just call the encode() method from the obj, and we get the type that we want.
+</p>
+
+<p> We can test this implementation by calling:</p>
+<pre>
+WriteFile.write(fullName("leo", "dias"))
+</pre>
+
+<h3> c. What are the pros and cons of writing the WriteStuff trait with the inheritance approach? </h3>
+<p> The pros:</p>
+<ol>
+    <li>Each method has a unique responsibility;</li>
+    <li>It is easy to test;</li>
+    <li>If there is an unhandled type, we get a compile error, not an execution error.</li>
+</ol>
+<p> The cons:</p>
+<ol>
+    <li>How to extend EncodableObj in classes we don't have control over, such as Int? It is not trivial;</li>
+    <li>For the classes that can extend EncodableObj, it is possible to provide only one implementation for the encode
+        method;
+    </li>
+    <li>It is necessary to put an extra method in the class that we are extending: We need to add the encode method to
+        the class fullName. In big projects, with a lot of traits or big classes, there are a lot of methods already, you are
+        including more complexity, it might be necessary to overload methods. Things get complicated.
+    </li>
+</ol>
+
+<p> Yet again, how to improve?</p>
+
+<h2>3. WriteStuff trait with Typeclass</h2>
+
+<p>The most elegant solution to this trait is writing it with typeclasses. Let's take a look in the following
+    code:
+</p>
+<pre>
+trait ByteEncoder[A] {
+  def encode(a: A): Array[Byte]
+}
+
+trait WriteStuff {
+  def write[A](
+              obj: A,
+              enc: ByteEncoder[A]
+              ): Unit
+}
+</pre>
+
+<p> In this case, the ByteEncoder trait is parametrized ([A]), and the encode method receives an argument of type A. By
+    defining that our argument obj also as type A in the write method of WriteStuff trait, and enc as a ByteEncoder also
+    of type A, we can call directly enc.encode(obj) to get an Array[Byte].
+</p>
+<p> This mean that now we don't extend classes with ByteEncoder, but we write instances for implementation. </p>
+<h3> a. Implementation of WriteFile trait with typeclasses </h3>
+<p> To make it clearer, let's take a look at the WriteFile object below:</p>
+<pre>
+object WriteObject extends WriteStuff {
+  override def write[A](obj: A, enc: ByteEncoder[A]): Unit = {
+    val bytes: Array[Byte] = enc.encode(obj)
+
+    Using(
+      new FileOutputStream("C:/Users/Leonardo/Desktop/Learning/learning-cats/testingWriteFileTypeclass")) {
+      os =>
+        os.write(bytes)
+        os.flush()
+    }
+  }
+}
+</pre>
+<p>
+    This works fine. However, we can't just run our code as of right now and try to write obj to a file, as the
+    WriteObject is very generic and does not have any implementation yet.
+</p>
+
+<h3> b. Implementing an Int object </h3>
+<p> Remember that in the inheritance example one of the major drawbacks was not being able to implement a WriteFile
+    for an Int? Let's start by implementing the WriteFile with typeclasses for Ints.
+</p>
+<p> We instantiate an object extending ByteEncoder with Int: </p>
+<pre>
+object IntByteEncoder extends ByteEncoder[Int] {
+  override def encode(n: Int): Array[Byte] = {
+    val byteBuffer = ByteBuffer.allocate(4)
+    byteBuffer.putInt(n)
+    byteBuffer.array()
+  }
+}
+</pre>
+
+<p>We now can call the write method in WriteObject by passing our obj (20), and the encoder for its type:</p>
+<pre>
+WriteObject.write[Int](20, IntByteEncoder)
+</pre>
+<p> This works perfectly! </p>
+
+<h3> c. Writing other types </h3>
+<p> If we need to write any other type with WriteObject, we can do something similar. For String types, for example:</p>
+<pre>
+object StringByteEncoder extends ByteEncoder[String] {
+  override def encode(s: String): Array[Byte] = s.getBytes
+}
+
+WriteObject.write("leo dias", StringByteEncoder)
+</pre>
+
+<h3> d. Advantages of typeclass solution </h3>
+<p> By writing the trait this way we have several advantages:</p>
+<ol>
+    <li> ByteEncoder can be instanced by any type;</li>
+    <li> It is very clean;</li>
+    <li> We can write pretty much any object.</li>
+    <li> It is possible to have several implementations for the same type (think about handling Ints differently based
+        on something).</li>
+</ol>
+<p> Bonus advantage: It is pretty neat :D </p>
+
 </body>
 </html>
