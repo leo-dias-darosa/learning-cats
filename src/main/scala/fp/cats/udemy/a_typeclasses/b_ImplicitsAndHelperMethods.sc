@@ -27,4 +27,9 @@ object WriteObject extends WriteStuff {
   }
 }
 
-WriteObject.write("ha")
+object Rotate3ByteEncoder extends ByteEncoder[String] {
+  override def encode(s: String): Array[Byte] =
+    s.getBytes.map(b => (b + 3).toByte)
+}
+
+WriteObject.write("testing")(Rotate3ByteEncoder)
